@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FlowForge</string>
+    <string name="open_menu">فتح القائمة</string>
+
+    <string name="nav_dashboard">لوحة التحكم</string>
+    <string name="nav_workflow_studio">استوديو سير العمل</string>
+    <string name="nav_request_lab">مختبر طلبات HTTP</string>
+    <string name="nav_parser_studio">استوديو المحللات</string>
+    <string name="nav_data_manager">مدير البيانات</string>
+    <string name="nav_proxy_manager">مدير البروكسي</string>
+    <string name="nav_runner">المشغّل</string>
+    <string name="nav_results">النتائج</string>
+    <string name="nav_settings">الإعدادات</string>
+
+    <string name="dash_workflows">سير العمل</string>
+    <string name="dash_sessions">جلسات التنفيذ</string>
+    <string name="dash_results">النتائج المخزنة</string>
+
+    <string name="ws_empty">لا يوجد سير عمل بعد. اضغط + لإنشاء واحد.</string>
+    <string name="ws_add">سير عمل جديد</string>
+    <string name="ws_name">اسم سير العمل</string>
+    <string name="ws_create">إنشاء</string>
+    <string name="ws_cancel">إلغاء</string>
+    <string name="ws_delete">حذف</string>
+    <string name="ws_delete_title">حذف سير العمل؟</string>
+    <string name="ws_delete_msg">سيتم حذف “%1$s” وكل عقده.</string>
+
+    <string name="soon_title">قادم في المرحلة %1$d</string>
+    <string name="soon_body">هذا القسم يُبنى في مرحلة لاحقة. لا شيء هنا وهمي.</string>
+
+    <string name="settings_language">اللغة</string>
+    <string name="lang_system">لغة النظام</string>
+    <string name="lang_en">English</string>
+    <string name="lang_ar">العربية</string>
+    <string name="ws_import">استيراد JSON</string>
+    <string name="ws_import_failed">فشل الاستيراد: %1$s</string>
+    <string name="ws_open">فتح المحرر</string>
+    <string name="ed_undo">تراجع</string>
+    <string name="ed_redo">إعادة</string>
+    <string name="ed_zoom_in">تكبير +</string>
+    <string name="ed_zoom_out">تصغير −</string>
+    <string name="ed_add_node">إضافة عقدة</string>
+    <string name="ed_edit">تعديل</string>
+    <string name="ed_duplicate">تكرار</string>
+    <string name="ed_delete">حذف</string>
+    <string name="ed_validate">تحقق</string>
+    <string name="ed_export">تصدير JSON</string>
+    <string name="ed_saving">جارٍ الحفظ…</string>
+    <string name="ed_saved">تم الحفظ</string>
+    <string name="ed_not_found">سير العمل غير موجود</string>
+    <string name="ed_valid">سير العمل صالح.</string>
+    <string name="ed_issues_title">التحقق</string>
+    <string name="ed_close">إغلاق</string>
+    <string name="ed_save">حفظ</string>
+    <string name="ed_node_name">اسم العقدة</string>
+    <string name="ed_pick_output">اضغط منفذ إخراج أولاً ثم منفذ إدخال.</string>
+    <string name="ed_connect_hint">اضغط الآن منفذ إدخال للربط. اضغط مطولاً على منفذ لفصله.</string>
+    <string name="ed_start_protected">لا يمكن حذف عقدة البداية.</string>
+    <string name="ed_export_done">تم تصدير سير العمل.</string>
+    <string name="ed_export_failed">فشل التصدير.</string>
+    <string name="ed_select_first">اختر عقدة أولاً.</string>
+    <string name="rl_method">الطريقة</string>
+    <string name="rl_url">الرابط</string>
+    <string name="rl_headers">الترويسات (الاسم: القيمة في كل سطر)</string>
+    <string name="rl_query">الاستعلام (مفتاح=قيمة في كل سطر)</string>
+    <string name="rl_body_type">نوع المحتوى</string>
+    <string name="rl_body">المحتوى</string>
+    <string name="rl_send">إرسال</string>
+    <string name="rl_cancel">إلغاء</string>
+    <string name="rl_preview">معاينة الطلب</string>
+    <string name="rl_response">الاستجابة</string>
+    <string name="rl_status">الحالة %1$d · %2$d م.ث</string>
+    <string name="rl_truncated">تم اقتطاع الاستجابة عند حد الحجم.</string>
+    <string name="rl_allowlist_hint">أضف هذا المضيف في الإعدادات ← النطاقات المسموحة.</string>
+    <string name="rl_headers_title">ترويسات الاستجابة</string>
+    <string name="rl_body_title">محتوى الاستجابة الخام</string>
+    <string name="rl_preview_title">معاينة الطلب</string>
+    <string name="ps_kind">المحلل</string>
+    <string name="ps_input">مدخل تجريبي (محتوى الاستجابة، أو ترويسات بصيغة الاسم: القيمة)</string>
+    <string name="ps_test">اختبار</string>
+    <string name="ps_result">القيم المستخرجة</string>
+    <string name="ps_path">JSONPath</string>
+    <string name="ps_selector">محدد CSS</string>
+    <string name="ps_attr">الخاصية (فارغ = النص)</string>
+    <string name="ps_pattern">النمط</string>
+    <string name="ps_group">المجموعة (فارغ = تلقائي)</string>
+    <string name="ps_header">اسم الترويسة</string>
+    <string name="ps_left">العلامة اليسرى</string>
+    <string name="ps_right">العلامة اليمنى</string>
+    <string name="ps_variable">اسم المتغير</string>
+    <string name="ps_assign">%1$s = %2$s</string>
+    <string name="ps_hint">معاينة فقط: انسخ نفس الإعدادات إلى عقدة محلل في استوديو سير العمل.</string>
+    <string name="rn_workflow">سير العمل</string>
+    <string name="rn_start">بدء</string>
+    <string name="rn_stop">إيقاف</string>
+    <string name="rn_logs">السجل</string>
+    <string name="rn_none">أنشئ سير عمل في الاستوديو أولاً.</string>
+    <string name="rn_steps">الخطوات: %1$d</string>
+    <string name="rn_result">النتيجة: %1$s</string>
+    <string name="rn_nodes">العقد</string>
+    <string name="re_all">الكل</string>
+    <string name="re_load_more">عرض المزيد</string>
+    <string name="re_empty">لا توجد نتائج محفوظة بعد. شغّل سير عمل من المشغّل.</string>
+    <string name="re_details">تفاصيل النتيجة</string>
+    <string name="re_close">إغلاق</string>
+    <string name="re_raw">معاينة الاستجابة الخام</string>
+    <string name="st_allowlist_title">النطاقات المسموحة</string>
+    <string name="st_allowlist_hint">مضيف واحد في كل سطر مثل example.com أو *.example.com. أي مضيف آخر يُرفض. اختبر فقط الأنظمة التي تملكها أو لديك إذن باختبارها.</string>
+    <string name="st_save">حفظ</string>
+    <string name="st_saved">تم الحفظ</string>
+</resources>

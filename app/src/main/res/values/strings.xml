@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FlowForge</string>
+    <string name="open_menu">Open menu</string>
+
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_workflow_studio">Workflow Studio</string>
+    <string name="nav_request_lab">HTTP Request Lab</string>
+    <string name="nav_parser_studio">Parser Studio</string>
+    <string name="nav_data_manager">Data Manager</string>
+    <string name="nav_proxy_manager">Proxy Manager</string>
+    <string name="nav_runner">Runner</string>
+    <string name="nav_results">Results</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="dash_workflows">Workflows</string>
+    <string name="dash_sessions">Execution sessions</string>
+    <string name="dash_results">Stored results</string>
+
+    <string name="ws_empty">No workflows yet. Tap + to create one.</string>
+    <string name="ws_add">New workflow</string>
+    <string name="ws_name">Workflow name</string>
+    <string name="ws_create">Create</string>
+    <string name="ws_cancel">Cancel</string>
+    <string name="ws_delete">Delete</string>
+    <string name="ws_delete_title">Delete workflow?</string>
+    <string name="ws_delete_msg">“%1$s” and all its nodes will be deleted.</string>
+
+    <string name="soon_title">Coming in phase %1$d</string>
+    <string name="soon_body">This section is built in a later phase. Nothing here is faked.</string>
+
+    <string name="settings_language">Language</string>
+    <string name="lang_system">System default</string>
+    <string name="lang_en">English</string>
+    <string name="lang_ar">العربية</string>
+    <string name="ws_import">Import JSON</string>
+    <string name="ws_import_failed">Import failed: %1$s</string>
+    <string name="ws_open">Open editor</string>
+    <string name="ed_undo">Undo</string>
+    <string name="ed_redo">Redo</string>
+    <string name="ed_zoom_in">Zoom +</string>
+    <string name="ed_zoom_out">Zoom −</string>
+    <string name="ed_add_node">Add node</string>
+    <string name="ed_edit">Edit</string>
+    <string name="ed_duplicate">Duplicate</string>
+    <string name="ed_delete">Delete</string>
+    <string name="ed_validate">Validate</string>
+    <string name="ed_export">Export JSON</string>
+    <string name="ed_saving">Saving…</string>
+    <string name="ed_saved">Saved</string>
+    <string name="ed_not_found">Workflow not found</string>
+    <string name="ed_valid">The workflow is valid.</string>
+    <string name="ed_issues_title">Validation</string>
+    <string name="ed_close">Close</string>
+    <string name="ed_save">Save</string>
+    <string name="ed_node_name">Node name</string>
+    <string name="ed_pick_output">Tap an output port first, then an input port.</string>
+    <string name="ed_connect_hint">Now tap an input port to connect. Long-press a port to disconnect it.</string>
+    <string name="ed_start_protected">The Start node cannot be deleted.</string>
+    <string name="ed_export_done">Workflow exported.</string>
+    <string name="ed_export_failed">Export failed.</string>
+    <string name="ed_select_first">Select a node first.</string>
+    <string name="rl_method">Method</string>
+    <string name="rl_url">URL</string>
+    <string name="rl_headers">Headers (Name: Value per line)</string>
+    <string name="rl_query">Query (key=value per line)</string>
+    <string name="rl_body_type">Body type</string>
+    <string name="rl_body">Body</string>
+    <string name="rl_send">Send</string>
+    <string name="rl_cancel">Cancel</string>
+    <string name="rl_preview">Preview request</string>
+    <string name="rl_response">Response</string>
+    <string name="rl_status">Status %1$d · %2$d ms</string>
+    <string name="rl_truncated">Response was truncated at the size limit.</string>
+    <string name="rl_allowlist_hint">Add this host under Settings → Allowed domains.</string>
+    <string name="rl_headers_title">Response headers</string>
+    <string name="rl_body_title">Raw response body</string>
+    <string name="rl_preview_title">Request preview</string>
+    <string name="ps_kind">Parser</string>
+    <string name="ps_input">Sample input (response body, or headers as Name: Value lines)</string>
+    <string name="ps_test">Test</string>
+    <string name="ps_result">Extracted values</string>
+    <string name="ps_path">JSONPath</string>
+    <string name="ps_selector">CSS selector</string>
+    <string name="ps_attr">Attribute (empty = text)</string>
+    <string name="ps_pattern">Pattern</string>
+    <string name="ps_group">Group (empty = auto)</string>
+    <string name="ps_header">Header name</string>
+    <string name="ps_left">Left marker</string>
+    <string name="ps_right">Right marker</string>
+    <string name="ps_variable">Variable name</string>
+    <string name="ps_assign">%1$s = %2$s</string>
+    <string name="ps_hint">Preview only: copy the same settings into a parser node in Workflow Studio.</string>
+    <string name="rn_workflow">Workflow</string>
+    <string name="rn_start">Start</string>
+    <string name="rn_stop">Stop</string>
+    <string name="rn_logs">Log</string>
+    <string name="rn_none">Create a workflow in Workflow Studio first.</string>
+    <string name="rn_steps">Steps: %1$d</string>
+    <string name="rn_result">Result: %1$s</string>
+    <string name="rn_nodes">Nodes</string>
+    <string name="re_all">All</string>
+    <string name="re_load_more">Load more</string>
+    <string name="re_empty">No stored results yet. Run a workflow from the Runner.</string>
+    <string name="re_details">Result details</string>
+    <string name="re_close">Close</string>
+    <string name="re_raw">Raw response preview</string>
+    <string name="st_allowlist_title">Allowed domains</string>
+    <string name="st_allowlist_hint">One host per line, e.g. example.com or *.example.com. Requests to any other host are refused. Only test systems you own or have permission to test.</string>
+    <string name="st_save">Save</string>
+    <string name="st_saved">Saved</string>
+</resources>
