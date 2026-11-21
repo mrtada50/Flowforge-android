@@ -32,15 +32,16 @@ jobs:
 
       - name: Unit tests, lint, debug APK
         run: |
-          set -o pipefail
-          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace --console=plain 2>&1 | tee build.log
-
-      - name: Show errors (short)
-        if: failure()
-        run: |
-          grep -E "^e: |error:|What went wrong" -A3 build.log | head -80 > errors.txt || true
-          cat errors.txt
-          { echo '### Build errors'; echo '```'; cat errors.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          set +e
+          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain > build.log 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            echo "=========== BUILD ERRORS (copy from here) ==========="
+            grep -E "^e: |error:|What went wrong|FAILED|Test.*FAILED" -A4 build.log | head -70
+            echo "====================== END =========================="
+            { echo '### Build errors'; echo '```'; grep -E "^e: |error:|What went wrong|FAILED" -A4 build.log | head -70; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $code
 
       - name: Upload reports
         if: always()
@@ -48,6 +49,7 @@ jobs:
         with:
           name: reports
           path: |
+            build.log
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
 
