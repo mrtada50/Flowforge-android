@@ -41,7 +41,7 @@ class WorkflowRepository(private val dao: WorkflowDao) {
                 NodeDef(it.id, NodeType.valueOf(it.type), it.displayName, it.x, it.y, decodeMap(it.configJson))
             },
             connections = dao.getConnections(id).map {
-                ConnectionDef(it.id, it.fromNode, it.fromPort, it.toNode, it.toPort)
+                ConnectionDef(it.id, it.fromNodeId, it.fromPort, it.toNodeId, it.toPort)
             },
             variables = decodeMap(w.variablesJson),
             settings = decodeSettings(w.settingsJson),

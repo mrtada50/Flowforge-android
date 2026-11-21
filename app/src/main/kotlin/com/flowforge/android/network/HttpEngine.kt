@@ -155,7 +155,7 @@ class HttpEngine(
         val limit = limits.maxResponseBytes
         val buf = Buffer()
         var truncated = false
-        val body = r.body
+        val body = r.body ?: throw HttpEngineException(Kind.NETWORK, "Empty response")
         var total = 0L
         try {
             val src = body.source()
