@@ -77,7 +77,7 @@ class WorkflowListViewModel(private val repo: WorkflowRepository) : ViewModel() 
     }
 
     /** Imports a workflow file as a NEW workflow. Invalid graphs are refused, not repaired. */
-    fun import(text: String) {
+    fun importWorkflow(text: String) {
         viewModelScope.launch {
             val decoded = WorkflowJson.decode(text)
             val def = decoded.getOrNull()
@@ -118,13 +118,21 @@ fun WorkflowStudioScreen(onOpen: (String) -> Unit) {
                 val text = withContext(Dispatchers.IO) {
                     runCatching {
                         context.contentResolver.openInputStream(uri)?.use { s ->
-                            val bytes = s.readNBytes(WorkflowJson.MAX_IMPORT_CHARS + 1)
-                            if (bytes.size > WorkflowJson.MAX_IMPORT_CHARS) error("File is too large")
-                            String(bytes)
+                            val out = java.io.ByteArrayOutputStream()
+                            val buf = ByteArray(8192)
+                            var total = 0
+                            while (true) {
+                                val n = s.read(buf)
+                                if (n < 0) break
+                                total += n
+                                if (total > WorkflowJson.MAX_IMPORT_CHARS) error("File is too large")
+                                out.write(buf, 0, n)
+                            }
+                            String(out.toByteArray())
                         } ?: error("Cannot open file")
                     }
                 }
-                text.onSuccess { vm.import(it) }.onFailure { vm.setImportError(it.message) }
+                text.onSuccess { vm.importWorkflow(it) }.onFailure { vm.setImportError(it.message) }
             }
         }
     }

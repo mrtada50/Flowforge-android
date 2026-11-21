@@ -22,13 +22,21 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Accept Android SDK licenses (SDK is preinstalled on the runner)
+        run: yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
       - name: Unit tests, lint, debug APK
-        run: gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace --console=plain 2>&1 | tee build.log
+
+      - name: Show errors (short)
+        if: failure()
+        run: grep -E "^e: |error:|What went wrong|FAILED" -A3 build.log | head -120 || true
 
       - name: Upload reports
         if: always()
@@ -60,6 +68,8 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Accept Android SDK licenses (SDK is preinstalled on the runner)
+        run: yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - uses: gradle/actions/setup-gradle@v4
         with:
