@@ -38,7 +38,9 @@ jobs:
       - name: Show errors (short)
         if: failure()
         run: |
-          grep -E "^e: |error:|What went wrong|FAILED" -A3 build.log | head -120 || true
+          grep -E "^e: |error:|What went wrong" -A3 build.log | head -80 > errors.txt || true
+          cat errors.txt
+          { echo '### Build errors'; echo '```'; cat errors.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload reports
         if: always()

@@ -130,7 +130,7 @@ class HttpEngine(
                 if (call.isCanceled()) throw CancellationException("HTTP call cancelled")
                 throw HttpEngineException(Kind.NETWORK, e.message ?: e::class.java.simpleName, e)
             }
-            response.use { r ->
+            url = response.use { r ->
                 if (spec.followRedirects && r.isRedirect) {
                     val location = r.header("Location")
                         ?: throw HttpEngineException(Kind.NETWORK, "Redirect without Location header")
@@ -143,7 +143,7 @@ class HttpEngine(
                         method = "GET"
                         withBody = false
                     }
-                    url = next
+                    next
                 } else {
                     return readResult(r, url, started)
                 }
