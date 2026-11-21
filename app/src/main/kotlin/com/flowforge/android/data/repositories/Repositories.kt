@@ -79,6 +79,19 @@ class WorkflowRepository(private val dao: WorkflowDao) {
 class ExecutionRepository(private val dao: ExecutionDao) {
     fun observeSessionCount() = dao.observeSessionCount()
     fun observeResultCount() = dao.observeResultCount()
-    fun observeResults(status: String?, limit: Int): Flow<List<ExecutionResultEntity>> = dao.observeResults(status, limit)
-    suspend fun saveRun(session: ExecutionSessionEntity, results: List<ExecutionResultEntity>) = dao.saveRun(session, results)
+    fun observeResults(status: String?, query: String?, newest: Boolean, limit: Int): Flow<List<ExecutionResultEntity>> =
+        dao.observeResults(status, query, if (newest) 1 else 0, limit)
+
+    fun observeStatusCounts() = dao.observeStatusCounts()
+    fun observeHttpCounts() = dao.observeHttpCounts()
+    fun observeAvgHttpMs() = dao.observeAvgHttpMs()
+    fun observeSessionStatusCounts() = dao.observeSessionStatusCounts()
+    fun observeSessions(limit: Int) = dao.observeSessions(limit)
+    suspend fun exportRows(limit: Int) = dao.exportRows(limit)
+
+    suspend fun insertSession(session: ExecutionSessionEntity) = dao.insertSession(session)
+    suspend fun updateSession(session: ExecutionSessionEntity) = dao.updateSession(session)
+    suspend fun insertResults(results: List<ExecutionResultEntity>) {
+        if (results.isNotEmpty()) dao.insertResults(results)
+    }
 }

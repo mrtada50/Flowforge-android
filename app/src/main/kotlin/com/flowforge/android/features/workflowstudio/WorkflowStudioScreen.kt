@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +50,8 @@ import com.flowforge.android.R
 import com.flowforge.android.app.FlowForgeApp
 import com.flowforge.android.data.database.WorkflowEntity
 import com.flowforge.android.data.repositories.WorkflowRepository
+import com.flowforge.android.workflow.model.WorkflowTemplate
+import com.flowforge.android.workflow.model.WorkflowTemplates
 import com.flowforge.android.workflow.model.withFreshIds
 import com.flowforge.android.workflow.serialization.WorkflowJson
 import com.flowforge.android.workflow.validation.WorkflowValidator
@@ -74,6 +79,14 @@ class WorkflowListViewModel(private val repo: WorkflowRepository) : ViewModel() 
 
     fun delete(id: String) {
         viewModelScope.launch { repo.delete(id) }
+    }
+
+    fun createFromTemplate(template: WorkflowTemplate, name: String, onCreated: (String) -> Unit) {
+        viewModelScope.launch {
+            val def = WorkflowTemplates.build(template, name)
+            repo.save(def)
+            onCreated(def.id)
+        }
     }
 
     /** Imports a workflow file as a NEW workflow. Invalid graphs are refused, not repaired. */
@@ -109,6 +122,7 @@ fun WorkflowStudioScreen(onOpen: (String) -> Unit) {
     val workflows by vm.workflows.collectAsStateWithLifecycle()
     val importError by vm.importError.collectAsStateWithLifecycle()
     var showCreate by rememberSaveable { mutableStateOf(false) }
+    var showTemplates by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<WorkflowEntity?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -166,10 +180,35 @@ fun WorkflowStudioScreen(onOpen: (String) -> Unit) {
                 }
             }
         }
-        OutlinedButton(
-            onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
-        ) { Text(stringResource(R.string.ws_import)) }
+        Row(Modifier.align(Alignment.TopEnd).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box {
+                OutlinedButton(onClick = { showTemplates = true }) { Text(stringResource(R.string.ws_templates)) }
+                DropdownMenu(expanded = showTemplates, onDismissRequest = { showTemplates = false }) {
+                    listOf(
+                        Triple(WorkflowTemplate.HTTP_CHECK, R.string.tpl_http_check, R.string.tpl_http_check_desc),
+                        Triple(WorkflowTemplate.JSON_EXTRACT, R.string.tpl_json_extract, R.string.tpl_json_extract_desc),
+                        Triple(WorkflowTemplate.DATASET_ITEM, R.string.tpl_dataset_item, R.string.tpl_dataset_item_desc),
+                    ).forEach { (t, title, desc) ->
+                        val name = stringResource(title)
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(name)
+                                    Text(stringResource(desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            },
+                            onClick = {
+                                showTemplates = false
+                                vm.createFromTemplate(t, name, onOpen)
+                            },
+                        )
+                    }
+                }
+            }
+            OutlinedButton(
+                onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
+            ) { Text(stringResource(R.string.ws_import)) }
+        }
         FloatingActionButton(
             onClick = { showCreate = true },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),

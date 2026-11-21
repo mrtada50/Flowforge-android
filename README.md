@@ -18,7 +18,9 @@ Add repository secrets: `KEYSTORE_BASE64` (base64 of your .jks), `KEYSTORE_PASSW
 Without them the release APK is produced unsigned.
 
 ## Status
-Implemented: CI, Compose + navigation, EN/AR + RTL, Room schema (v2 + migration), Workflow Studio (visual canvas: add/drag/connect/rename/duplicate/delete,
-undo/redo, autosave, validation, JSON export/import), execution engine, HTTP engine (allowlist, limits, cookies, redirects), Parser engine,
-Request Lab, Parser Studio, Runner (in-app), Results (filter + paging), domain allowlist setting.
-Not yet: Data Manager, Proxy Manager, foreground service/WorkManager, analytics charts, instrumented UI tests.
+Workflow Studio (visual editor, templates, JSON import/export), execution engine, HTTP engine (allowlist, limits, cookies, one optional proxy),
+Parser engine, Request Lab, Parser Studio, Data Manager (streamed import/preview/search/duplicates/validation), Proxy Manager (Keystore-encrypted passwords),
+Runner (single run or dataset run with hard limits, pause/resume/stop, foreground service + notification), Results (search, filters, paging, CSV export) and Analytics.
+
+Safety limits: only hosts in Allowed domains are contacted, max 8 workers, max 20 items/second, max 100,000 items, no proxy rotation.
+Not yet: WorkManager scheduling, instrumented UI tests, module split.

@@ -15,6 +15,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Call
+import com.flowforge.android.domain.models.ProxyConfig
+import com.flowforge.android.domain.models.ProxyType
+import okhttp3.Credentials
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.FormBody
@@ -28,6 +31,8 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.Buffer
 import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.io.InterruptedIOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -67,6 +72,7 @@ class HttpEngine(
     private val limits: HttpLimits = HttpLimits(),
     baseClient: OkHttpClient = OkHttpClient(),
     val cookieJar: MemoryCookieJar = MemoryCookieJar(),
+    private val proxyProvider: () -> ProxyConfig? = { null },
 ) : HttpClientPort {
 
     private val client: OkHttpClient = baseClient.newBuilder()
@@ -114,11 +120,12 @@ class HttpEngine(
                 throw HttpEngineException(Kind.BLOCKED, "Host is not in the allowlist: ${url.host}")
             }
             val request = buildRequest(spec, method, url, withBody)
-            val callClient = client.newBuilder()
+            val builder = client.newBuilder()
                 .connectTimeout(spec.connectTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
                 .readTimeout(spec.readTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
                 .callTimeout(spec.callTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-                .build()
+            applyProxy(builder)
+            val callClient = builder.build()
             val call = callClient.newCall(request)
             active.set(call)
             val response = try {
@@ -147,6 +154,20 @@ class HttpEngine(
                 } else {
                     return readResult(r, url, started)
                 }
+            }
+        }
+    }
+
+    /** One fixed proxy for the whole request. No rotation, no fallback to other proxies. */
+    private fun applyProxy(builder: OkHttpClient.Builder) {
+        val p = proxyProvider() ?: return
+        val type = if (p.type == ProxyType.SOCKS5) Proxy.Type.SOCKS else Proxy.Type.HTTP
+        builder.proxy(Proxy(type, InetSocketAddress.createUnresolved(p.host, p.port)))
+        val user = p.username
+        if (!user.isNullOrEmpty() && p.type != ProxyType.SOCKS5) {
+            val credential = Credentials.basic(user, p.password.orEmpty())
+            builder.proxyAuthenticator { _, response ->
+                response.request.newBuilder().header("Proxy-Authorization", credential).build()
             }
         }
     }

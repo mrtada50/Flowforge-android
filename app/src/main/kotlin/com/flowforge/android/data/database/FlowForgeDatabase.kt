@@ -25,6 +25,8 @@ abstract class FlowForgeDatabase : RoomDatabase() {
     abstract fun workflowDao(): WorkflowDao
     abstract fun executionDao(): ExecutionDao
     abstract fun settingsDao(): SettingsDao
+    abstract fun datasetDao(): DatasetDao
+    abstract fun proxyDao(): ProxyDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {

@@ -45,7 +45,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.flowforge.android.R
-import com.flowforge.android.features.common.ComingSoonScreen
 import com.flowforge.android.features.dashboard.DashboardScreen
 import com.flowforge.android.features.settings.SettingsScreen
 import com.flowforge.android.features.workflowstudio.WorkflowStudioScreen
@@ -53,6 +52,8 @@ import com.flowforge.android.features.editor.EditorScreen
 import com.flowforge.android.features.requestlab.RequestLabScreen
 import com.flowforge.android.features.parserstudio.ParserStudioScreen
 import com.flowforge.android.features.runner.RunnerScreen
+import com.flowforge.android.features.datamanager.DataManagerScreen
+import com.flowforge.android.features.proxymanager.ProxyManagerScreen
 import com.flowforge.android.features.results.ResultsScreen
 import kotlinx.coroutines.launch
 
@@ -79,6 +80,14 @@ fun AppRoot() {
     val current = Destination.entries.firstOrNull { it.route == route }
         ?: if (route?.startsWith("editor") == true) Destination.WorkflowStudio else Destination.Dashboard
 
+    fun go(route: String) {
+        nav.navigate(route) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -93,11 +102,7 @@ fun AppRoot() {
                             selected = d == current,
                             onClick = {
                                 scope.launch { drawerState.close() }
-                                nav.navigate(d.route) {
-                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                                go(d.route)
                             },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                         )
@@ -119,7 +124,7 @@ fun AppRoot() {
             },
         ) { padding ->
             NavHost(nav, startDestination = Destination.Dashboard.route, modifier = Modifier.padding(padding)) {
-                composable(Destination.Dashboard.route) { DashboardScreen() }
+                composable(Destination.Dashboard.route) { DashboardScreen(onNavigate = { go(it) }) }
                 composable(Destination.WorkflowStudio.route) {
                     WorkflowStudioScreen(onOpen = { id -> nav.navigate("editor/$id") })
                 }
@@ -129,8 +134,8 @@ fun AppRoot() {
                 ) { entry -> EditorScreen(entry.arguments?.getString("workflowId").orEmpty()) }
                 composable(Destination.RequestLab.route) { RequestLabScreen() }
                 composable(Destination.ParserStudio.route) { ParserStudioScreen() }
-                composable(Destination.DataManager.route) { ComingSoonScreen(5) }
-                composable(Destination.ProxyManager.route) { ComingSoonScreen(5) }
+                composable(Destination.DataManager.route) { DataManagerScreen() }
+                composable(Destination.ProxyManager.route) { ProxyManagerScreen() }
                 composable(Destination.Runner.route) { RunnerScreen() }
                 composable(Destination.Results.route) { ResultsScreen() }
                 composable(Destination.Settings.route) { SettingsScreen() }
