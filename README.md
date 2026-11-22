@@ -18,9 +18,13 @@ Add repository secrets: `KEYSTORE_BASE64` (base64 of your .jks), `KEYSTORE_PASSW
 Without them the release APK is produced unsigned.
 
 ## Status
-Workflow Studio (visual editor, templates, JSON import/export), execution engine, HTTP engine (allowlist, limits, cookies, one optional proxy),
-Parser engine, Request Lab, Parser Studio, Data Manager (streamed import/preview/search/duplicates/validation), Proxy Manager (Keystore-encrypted passwords),
-Runner (single run or dataset run with hard limits, pause/resume/stop, foreground service + notification), Results (search, filters, paging, CSV export) and Analytics.
+Workflow Studio now has two modes: **Stack** (default) — an OpenBullet-style vertical list of colour-coded blocks
+(green=HTTP request, blue=branch/check, amber=parser, purple=other) with add/duplicate/delete/move/save/export icons,
+an inline Block Info panel for the selected block's fields, and a Debugger panel that runs the workflow once and shows
+BOT STATUS + VARIABLES — and **Canvas**, the original free-form node graph for branches, loops and manual wiring.
+Execution engine, HTTP engine (allowlist, limits, cookies, one optional proxy), Parser engine, Request Lab, Parser Studio,
+Data Manager, Proxy Manager, Runner (single/dataset runs, hard limits, pause/resume/stop, foreground service), Results
+(search, filters, paging, CSV export) and Analytics.
 
 Safety limits: only hosts in Allowed domains are contacted, max 8 workers, max 20 items/second, max 100,000 items, no proxy rotation.
 Not yet: WorkManager scheduling, instrumented UI tests, module split.

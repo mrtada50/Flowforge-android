@@ -208,4 +208,14 @@
     <string name="an_status">حالة النتائج</string>
     <string name="an_history">سجل التنفيذ</string>
     <string name="an_none">لا توجد بيانات بعد.</string>
+    <string name="ed_mode_stack">المكدس</string>
+    <string name="ed_mode_canvas">الكانفاس</string>
+    <string name="ed_move_up">تحريك لأعلى</string>
+    <string name="ed_move_down">تحريك لأسفل</string>
+    <string name="ed_stack_title">المكدس الحالي</string>
+    <string name="ed_unlinked_title">عقد أخرى (فروع/حلقات — اربطها من الكانفاس)</string>
+    <string name="ed_block_info">معلومات العقدة</string>
+    <string name="ed_apply">تطبيق</string>
+    <string name="ed_debugger">المصحّح</string>
+    <string name="ed_debug_empty">اضغط بدء لتشغيل سير العمل مرة واحدة ورؤية الحالة والمتغيرات هنا.</string>
 </resources>

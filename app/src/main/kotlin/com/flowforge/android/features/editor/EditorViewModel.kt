@@ -3,7 +3,11 @@ package com.flowforge.android.features.editor
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.flowforge.android.data.repositories.WorkflowRepository
+import com.flowforge.android.app.AppContainer
+import com.flowforge.android.domain.interfaces.HttpClientPort
+import com.flowforge.android.execution.DefaultNodeHandler
+import com.flowforge.android.execution.ExecutionContext
+import com.flowforge.android.execution.WorkflowEngine
 import com.flowforge.android.workflow.model.ConnectionDef
 import com.flowforge.android.workflow.model.NodeDef
 import com.flowforge.android.workflow.model.NodeSpecs
@@ -60,9 +64,16 @@ data class EditorUiState(
     val canRedo: Boolean = false,
     val saving: Boolean = false,
     val message: EditorMessage? = null,
+    val viewMode: EditorViewMode = EditorViewMode.STACK,
+    val debugRunning: Boolean = false,
+    val debugLines: List<String> = emptyList(),
 )
 
-class EditorViewModel(private val repo: WorkflowRepository, private val workflowId: String) : ViewModel() {
+enum class EditorViewMode { STACK, CANVAS }
+
+class EditorViewModel(private val container: AppContainer, private val workflowId: String) : ViewModel() {
+    private val repo = container.workflowRepository
+    private val http: HttpClientPort get() = container.httpEngine
     private val _ui = MutableStateFlow(EditorUiState())
     val ui: StateFlow<EditorUiState> = _ui.asStateFlow()
 
@@ -151,6 +162,7 @@ class EditorViewModel(private val repo: WorkflowRepository, private val workflow
 
     // ---- selection ----
     fun select(id: String?) = _ui.update { it.copy(selectedNodeId = id) }
+    fun setViewMode(mode: EditorViewMode) = _ui.update { it.copy(viewMode = mode) }
     fun clearMessage() = _ui.update { it.copy(message = null) }
     fun postMessage(text: String) = _ui.update { it.copy(message = EditorMessage.Text(text)) }
     private fun post(m: EditorMessage) = _ui.update { it.copy(message = m) }
@@ -196,19 +208,115 @@ class EditorViewModel(private val repo: WorkflowRepository, private val workflow
         commit(wf.copy(nodes = wf.nodes.map { if (it.id == id) it.copy(name = name, config = it.config + config) else it }))
     }
 
+    /** Deletes the node and bridges the gap: whatever pointed into it now points to what it pointed out to via its primary port. */
     fun deleteSelected() {
         val s = _ui.value
         val wf = s.workflow ?: return
         val node = wf.nodes.firstOrNull { it.id == s.selectedNodeId } ?: return post(EditorMessage.SelectFirst)
         if (node.type == NodeType.START) return post(EditorMessage.StartProtected)
+        val successor = wf.connections.firstOrNull { it.fromNode == node.id && it.fromPort == primaryPort(node.type) }
+        val bridged = wf.connections.filter { it.toNode == node.id }.mapNotNull { inConn ->
+            successor?.let { ConnectionDef(newId(), inConn.fromNode, inConn.fromPort, it.toNode, it.toPort) }
+        }
         commit(
             wf.copy(
                 nodes = wf.nodes.filterNot { it.id == node.id },
-                connections = wf.connections.filterNot { it.fromNode == node.id || it.toNode == node.id },
+                connections = wf.connections.filterNot { it.fromNode == node.id || it.toNode == node.id } + bridged,
             ),
             selected = null,
         )
         _ui.update { it.copy(pendingFrom = null) }
+    }
+
+    // ---- stack (linear) view: insert / reorder along each node's primary (first) output port ----
+
+    private fun primaryPort(type: NodeType): String? = NodeSpecs.of(type).outputs.firstOrNull()
+
+    /** Nodes in primary-chain order, following each node's first output port, starting at Start. */
+    fun primaryChain(): List<NodeDef> {
+        val wf = _ui.value.workflow ?: return emptyList()
+        val byId = wf.nodes.associateBy { it.id }
+        val start = wf.nodes.firstOrNull { it.type == NodeType.START } ?: return emptyList()
+        val chain = mutableListOf(start)
+        val seen = mutableSetOf(start.id)
+        var current = start
+        while (current.type != NodeType.END && current.type != NodeType.STOP) {
+            val port = primaryPort(current.type) ?: break
+            val next = wf.connections.firstOrNull { it.fromNode == current.id && it.fromPort == port }?.let { byId[it.toNode] } ?: break
+            if (!seen.add(next.id)) break
+            chain.add(next)
+            current = next
+        }
+        return chain
+    }
+
+    /** Nodes that exist but are not part of the primary chain (reached only via a branch, or unwired). */
+    fun unlinkedNodes(): List<NodeDef> {
+        val wf = _ui.value.workflow ?: return emptyList()
+        val inChain = primaryChain().map { it.id }.toSet()
+        return wf.nodes.filterNot { it.id in inChain }
+    }
+
+    /** Rebuilds only the primary-chain edges (each listed node's first-output-port edge) to match this order.
+     *  Any other connection (a branch's secondary port, a loop-back edge) is left untouched. */
+    private fun rewirePrimaryChain(wf: WorkflowDef, order: List<NodeDef>): WorkflowDef {
+        val orderedIds = order.map { it.id }.toSet()
+        val keep = wf.connections.filterNot { c ->
+            val from = wf.nodes.firstOrNull { it.id == c.fromNode }
+            from != null && c.fromNode in orderedIds && c.fromPort == primaryPort(from.type)
+        }
+        val rebuilt = order.zipWithNext().mapNotNull { (a, b) ->
+            primaryPort(a.type)?.let { ConnectionDef(newId(), a.id, it, b.id, "in") }
+        }
+        return wf.copy(connections = keep + rebuilt)
+    }
+
+    /** Adds a block to the main stack, right after the selected block (or right before End if none selected). */
+    fun addToStack(type: NodeType) {
+        val wf = _ui.value.workflow ?: return
+        val chain = primaryChain()
+        if (chain.size < 2) return
+        val selId = _ui.value.selectedNodeId
+        val afterIndex = chain.indexOfFirst { it.id == selId }.let { if (it in 0 until chain.lastIndex) it else chain.lastIndex - 1 }
+        val node = newNode(type, 0f, 0f)
+        val newOrder = chain.toMutableList().apply { add(afterIndex + 1, node) }
+        val rewired = rewirePrimaryChain(wf.copy(nodes = wf.nodes + node), newOrder)
+        commit(rewired, selected = node.id)
+    }
+
+    /** Moves a stack block up or down (swaps it with its neighbour) and rewires the chain to match. */
+    fun moveInStack(nodeId: String, up: Boolean) {
+        val wf = _ui.value.workflow ?: return
+        val chain = primaryChain().toMutableList()
+        val i = chain.indexOfFirst { it.id == nodeId }
+        val j = if (up) i - 1 else i + 1
+        if (i <= 0 || j <= 0 || j >= chain.size - 1) return // keep Start/End fixed at the ends
+        val tmp = chain[i]; chain[i] = chain[j]; chain[j] = tmp
+        commit(rewirePrimaryChain(wf, chain))
+    }
+
+    // ---- inline quick debug run (single execution, current workflow) ----
+
+    fun runDebug() {
+        val wf = _ui.value.workflow ?: return
+        if (_ui.value.debugRunning) return
+        _ui.update { it.copy(debugRunning = true, debugLines = emptyList()) }
+        viewModelScope.launch {
+            val lines = mutableListOf<String>()
+            val ctx = ExecutionContext(wf.variables)
+            val result = try {
+                WorkflowEngine(DefaultNodeHandler(http) { lines.add(it) }).execute(wf, ctx)
+            } catch (e: Exception) {
+                _ui.update {
+                    it.copy(debugRunning = false, debugLines = listOf("BOT STATUS: ERROR", e.message ?: e::class.java.simpleName))
+                }
+                return@launch
+            }
+            lines.add(0, "BOT STATUS: ${result.status}" + (result.error?.let { " ($it)" } ?: ""))
+            lines.add("VARIABLES:")
+            ctx.variables.forEach { (k, v) -> lines.add("  $k = ${v.take(200)}") }
+            _ui.update { it.copy(debugRunning = false, debugLines = lines) }
+        }
     }
 
     fun duplicateSelected() {

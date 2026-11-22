@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,7 +29,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,6 +60,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -87,7 +105,7 @@ fun EditorScreen(workflowId: String) {
     val container = (context.applicationContext as FlowForgeApp).container
     val vm: EditorViewModel = viewModel(
         key = "editor-$workflowId",
-        factory = viewModelFactory { initializer { EditorViewModel(container.workflowRepository, workflowId) } },
+        factory = viewModelFactory { initializer { EditorViewModel(container, workflowId) } },
     )
     val ui by vm.ui.collectAsStateWithLifecycle()
     DisposableEffect(vm) { onDispose { vm.flush() } }
@@ -116,46 +134,26 @@ fun EditorScreen(workflowId: String) {
     }
 
     val wf = ui.workflow
+    fun doExport() {
+        val name = wf?.name?.replace(Regex("[^\\p{L}\\p{N}._-]"), "_") ?: "workflow"
+        exportLauncher.launch("$name.json")
+    }
     when {
         !ui.loaded -> Box(Modifier.fillMaxSize()) { CircularProgressIndicator(Modifier.align(Alignment.Center)) }
         wf == null -> Box(Modifier.fillMaxSize()) { Text(stringResource(R.string.ed_not_found), Modifier.align(Alignment.Center)) }
         else -> {
             val selected = wf.nodes.firstOrNull { it.id == ui.selectedNodeId }
             Column(Modifier.fillMaxSize()) {
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp)) {
-                    TextButton(onClick = vm::undo, enabled = ui.canUndo) { Text(stringResource(R.string.ed_undo)) }
-                    TextButton(onClick = vm::redo, enabled = ui.canRedo) { Text(stringResource(R.string.ed_redo)) }
-                    TextButton(onClick = { vm.transform(viewport.width / 2f, viewport.height / 2f, 0f, 0f, 1.25f) }) {
-                        Text(stringResource(R.string.ed_zoom_in))
+                Row(
+                    Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ModeTab(stringResource(R.string.ed_mode_stack), ui.viewMode == EditorViewMode.STACK, Modifier.weight(1f)) {
+                        vm.setViewMode(EditorViewMode.STACK)
                     }
-                    TextButton(onClick = { vm.transform(viewport.width / 2f, viewport.height / 2f, 0f, 0f, 0.8f) }) {
-                        Text(stringResource(R.string.ed_zoom_out))
+                    ModeTab(stringResource(R.string.ed_mode_canvas), ui.viewMode == EditorViewMode.CANVAS, Modifier.weight(1f)) {
+                        vm.setViewMode(EditorViewMode.CANVAS)
                     }
-                    Box {
-                        TextButton(onClick = { showAdd = true }) { Text(stringResource(R.string.ed_add_node)) }
-                        DropdownMenu(expanded = showAdd, onDismissRequest = { showAdd = false }) {
-                            NodeType.entries.filter { it != NodeType.START }.forEach { type ->
-                                DropdownMenuItem(
-                                    text = { Text(type.title) },
-                                    onClick = {
-                                        showAdd = false
-                                        vm.addNode(type, -ui.panX / density / ui.scale + 40f, -ui.panY / density / ui.scale + 40f)
-                                    },
-                                )
-                            }
-                        }
-                    }
-                    TextButton(onClick = {
-                        if (selected != null) showEdit = true else vm.postMessage(context.getString(R.string.ed_select_first))
-                    }) {
-                        Text(stringResource(R.string.ed_edit))
-                    }
-                    TextButton(onClick = vm::duplicateSelected) { Text(stringResource(R.string.ed_duplicate)) }
-                    TextButton(onClick = vm::deleteSelected) { Text(stringResource(R.string.ed_delete)) }
-                    TextButton(onClick = { issues = vm.validate() }) { Text(stringResource(R.string.ed_validate)) }
-                    TextButton(onClick = {
-                        exportLauncher.launch(wf.name.replace(Regex("[^\\p{L}\\p{N}._-]"), "_") + ".json")
-                    }) { Text(stringResource(R.string.ed_export)) }
                 }
                 Text(
                     stringResource(if (ui.saving) R.string.ed_saving else R.string.ed_saved),
@@ -164,22 +162,60 @@ fun EditorScreen(workflowId: String) {
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
 
-                Box(Modifier.weight(1f).fillMaxWidth()) {
-                    // The canvas is always laid out left-to-right so that port positions stay predictable.
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        Canvas2D(wf.nodes, wf, ui, vm, density) { viewport = it }
-                    }
-                    ui.pendingFrom?.let {
-                        Banner(stringResource(R.string.ed_connect_hint), Modifier.align(Alignment.TopCenter), null)
-                    }
-                    ui.message?.let { m ->
-                        val text = when (m) {
-                            EditorMessage.PickOutput -> stringResource(R.string.ed_pick_output)
-                            EditorMessage.StartProtected -> stringResource(R.string.ed_start_protected)
-                            EditorMessage.SelectFirst -> stringResource(R.string.ed_select_first)
-                            is EditorMessage.Text -> m.text
+                if (ui.viewMode == EditorViewMode.STACK) {
+                    StackView(wf = wf, ui = ui, vm = vm, selected = selected, onExport = ::doExport, onShowIssues = { issues = vm.validate() })
+                } else {
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp)) {
+                        TextButton(onClick = vm::undo, enabled = ui.canUndo) { Text(stringResource(R.string.ed_undo)) }
+                        TextButton(onClick = vm::redo, enabled = ui.canRedo) { Text(stringResource(R.string.ed_redo)) }
+                        TextButton(onClick = { vm.transform(viewport.width / 2f, viewport.height / 2f, 0f, 0f, 1.25f) }) {
+                            Text(stringResource(R.string.ed_zoom_in))
                         }
-                        Banner(text, Modifier.align(Alignment.BottomCenter)) { vm.clearMessage() }
+                        TextButton(onClick = { vm.transform(viewport.width / 2f, viewport.height / 2f, 0f, 0f, 0.8f) }) {
+                            Text(stringResource(R.string.ed_zoom_out))
+                        }
+                        Box {
+                            TextButton(onClick = { showAdd = true }) { Text(stringResource(R.string.ed_add_node)) }
+                            DropdownMenu(expanded = showAdd, onDismissRequest = { showAdd = false }) {
+                                NodeType.entries.filter { it != NodeType.START }.forEach { type ->
+                                    DropdownMenuItem(
+                                        text = { Text(type.title) },
+                                        onClick = {
+                                            showAdd = false
+                                            vm.addNode(type, -ui.panX / density / ui.scale + 40f, -ui.panY / density / ui.scale + 40f)
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        TextButton(onClick = {
+                            if (selected != null) showEdit = true else vm.postMessage(context.getString(R.string.ed_select_first))
+                        }) {
+                            Text(stringResource(R.string.ed_edit))
+                        }
+                        TextButton(onClick = vm::duplicateSelected) { Text(stringResource(R.string.ed_duplicate)) }
+                        TextButton(onClick = vm::deleteSelected) { Text(stringResource(R.string.ed_delete)) }
+                        TextButton(onClick = { issues = vm.validate() }) { Text(stringResource(R.string.ed_validate)) }
+                        TextButton(onClick = ::doExport) { Text(stringResource(R.string.ed_export)) }
+                    }
+
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        // The canvas is always laid out left-to-right so that port positions stay predictable.
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            Canvas2D(wf.nodes, wf, ui, vm, density) { viewport = it }
+                        }
+                        ui.pendingFrom?.let {
+                            Banner(stringResource(R.string.ed_connect_hint), Modifier.align(Alignment.TopCenter), null)
+                        }
+                        ui.message?.let { m ->
+                            val text = when (m) {
+                                EditorMessage.PickOutput -> stringResource(R.string.ed_pick_output)
+                                EditorMessage.StartProtected -> stringResource(R.string.ed_start_protected)
+                                EditorMessage.SelectFirst -> stringResource(R.string.ed_select_first)
+                                is EditorMessage.Text -> m.text
+                            }
+                            Banner(text, Modifier.align(Alignment.BottomCenter)) { vm.clearMessage() }
+                        }
                     }
                 }
             }
@@ -369,6 +405,33 @@ private fun PortDot(active: Boolean, onClick: () -> Unit, onLong: () -> Unit) {
 }
 
 @Composable
+private fun NodeFieldsForm(
+    node: NodeDef,
+    name: String,
+    onNameChange: (String) -> Unit,
+    values: Map<String, String>,
+    onFieldChange: (String, String) -> Unit,
+) {
+    val spec = NodeSpecs.of(node.type)
+    OutlinedTextField(
+        value = name, onValueChange = onNameChange, singleLine = true,
+        label = { Text(stringResource(R.string.ed_node_name)) }, modifier = Modifier.fillMaxWidth(),
+    )
+    spec.fields.forEach { f ->
+        val hint: (@Composable () -> Unit)? = if (f.hint.isNotEmpty()) ({ Text(f.hint) }) else null
+        OutlinedTextField(
+            value = values[f.key].orEmpty(),
+            onValueChange = { onFieldChange(f.key, it) },
+            label = { Text(f.label + if (f.required) " *" else "") },
+            supportingText = hint,
+            singleLine = !f.multiline,
+            minLines = if (f.multiline) 3 else 1,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
 private fun NodeEditDialog(node: NodeDef, onDismiss: () -> Unit, onSave: (String, Map<String, String>) -> Unit) {
     val spec = NodeSpecs.of(node.type)
     var name by remember(node.id) { mutableStateOf(node.name) }
@@ -380,22 +443,7 @@ private fun NodeEditDialog(node: NodeDef, onDismiss: () -> Unit, onSave: (String
         title = { Text(node.type.title) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = name, onValueChange = { name = it }, singleLine = true,
-                    label = { Text(stringResource(R.string.ed_node_name)) }, modifier = Modifier.fillMaxWidth(),
-                )
-                spec.fields.forEach { f ->
-                    val hint: (@Composable () -> Unit)? = if (f.hint.isNotEmpty()) ({ Text(f.hint) }) else null
-                    OutlinedTextField(
-                        value = values[f.key].orEmpty(),
-                        onValueChange = { values[f.key] = it },
-                        label = { Text(f.label + if (f.required) " *" else "") },
-                        supportingText = hint,
-                        singleLine = !f.multiline,
-                        minLines = if (f.multiline) 3 else 1,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                NodeFieldsForm(node, name, { name = it }, values) { k, v -> values[k] = v }
             }
         },
         confirmButton = {
@@ -405,6 +453,181 @@ private fun NodeEditDialog(node: NodeDef, onDismiss: () -> Unit, onSave: (String
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ed_close)) } },
     )
+}
+
+/** Block category colour, OpenBullet-style: request = green, branch/check = blue, parse = amber, everything else = purple. */
+private fun blockColor(type: NodeType): Color = when (type) {
+    NodeType.HTTP_REQUEST -> FFColors.success
+    NodeType.CONDITION, NodeType.IF_ELSE, NodeType.DATA_VALIDATION, NodeType.SUCCESS_BRANCH, NodeType.ERROR_BRANCH -> FFColors.blue
+    NodeType.JSON_PARSER, NodeType.HTML_PARSER, NodeType.REGEX_PARSER, NodeType.HEADER_PARSER, NodeType.TEXT_EXTRACTOR -> FFColors.warn
+    NodeType.START, NodeType.END, NodeType.STOP -> FFColors.textMuted
+    else -> FFColors.retry
+}
+
+@Composable
+private fun ModeTab(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) FFColors.cyan.copy(alpha = 0.18f) else FFColors.surfaceRaised)
+            .border(1.dp, if (selected) FFColors.cyan else FFColors.border, RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = if (selected) FFColors.cyan else FFColors.textMuted, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+@Composable
+private fun StackBlockBar(node: NodeDef, selected: Boolean, onClick: () -> Unit) {
+    val color = blockColor(node.type)
+    val isEnd = node.type == NodeType.START || node.type == NodeType.END || node.type == NodeType.STOP
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
+            .height(if (isEnd) 34.dp else 48.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(color.copy(alpha = if (isEnd) 0.18f else if (selected) 0.95f else 0.6f))
+            .border(if (selected) 2.dp else 1.dp, if (selected) Color.White.copy(alpha = 0.8f) else color.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            node.name.uppercase(),
+            color = if (isEnd) color else Color(0xFF07110C),
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+    }
+}
+
+@Composable
+private fun StackView(
+    wf: com.flowforge.android.workflow.model.WorkflowDef,
+    ui: EditorUiState,
+    vm: EditorViewModel,
+    selected: NodeDef?,
+    onExport: () -> Unit,
+    onShowIssues: () -> Unit,
+) {
+    var showAdd by remember { mutableStateOf(false) }
+    val chain = remember(wf) { vm.primaryChain() }
+    val unlinked = remember(wf) { vm.unlinkedNodes() }
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        // Toolbar: +, duplicate, delete, move up/down, save, export, validate, debug — OpenBullet's "Current Stack" icon row.
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Box {
+                IconButton(onClick = { showAdd = true }) { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.ed_add_node)) }
+                DropdownMenu(expanded = showAdd, onDismissRequest = { showAdd = false }) {
+                    NodeType.entries.filter { it != NodeType.START && it != NodeType.END }.forEach { type ->
+                        DropdownMenuItem(text = { Text(type.title) }, onClick = { showAdd = false; vm.addToStack(type) })
+                    }
+                }
+            }
+            IconButton(onClick = vm::duplicateSelected) { Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.ed_duplicate)) }
+            IconButton(onClick = vm::deleteSelected) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.ed_delete)) }
+            IconButton(onClick = { selected?.let { vm.moveInStack(it.id, up = true) } }) {
+                Icon(Icons.Default.ArrowUpward, contentDescription = stringResource(R.string.ed_move_up))
+            }
+            IconButton(onClick = { selected?.let { vm.moveInStack(it.id, up = false) } }) {
+                Icon(Icons.Default.ArrowDownward, contentDescription = stringResource(R.string.ed_move_down))
+            }
+            IconButton(onClick = vm::flush) { Icon(Icons.Default.Save, contentDescription = stringResource(R.string.ed_save)) }
+            IconButton(onClick = onExport) { Icon(Icons.Default.FileDownload, contentDescription = stringResource(R.string.ed_export)) }
+            TextButton(onClick = onShowIssues) { Text(stringResource(R.string.ed_validate)) }
+        }
+
+        Text(
+            stringResource(R.string.ed_stack_title),
+            style = MaterialTheme.typography.labelLarge,
+            color = FFColors.textMuted,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        Column(Modifier.fillMaxWidth().height(320.dp).verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+            chain.forEach { node -> StackBlockBar(node, node.id == ui.selectedNodeId) { vm.select(node.id) } }
+        }
+        if (unlinked.isNotEmpty()) {
+            Text(
+                stringResource(R.string.ed_unlinked_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = FFColors.warn,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                unlinked.forEach { node -> StackBlockBar(node, node.id == ui.selectedNodeId) { vm.select(node.id) } }
+            }
+        }
+
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+        // Block Info: the selected block's own fields, edited inline and applied with one explicit tap.
+        Text(
+            stringResource(R.string.ed_block_info),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        if (selected == null) {
+            Text(
+                stringResource(R.string.ed_select_first),
+                color = FFColors.textMuted,
+                modifier = Modifier.padding(16.dp),
+            )
+        } else {
+            var name by remember(selected.id) { mutableStateOf(selected.name) }
+            val values = remember(selected.id) {
+                mutableStateMapOf<String, String>().apply {
+                    NodeSpecs.of(selected.type).fields.forEach { put(it.key, selected.config[it.key] ?: it.default) }
+                }
+            }
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                NodeFieldsForm(selected, name, { name = it }, values) { k, v -> values[k] = v }
+                TextButton(
+                    enabled = name.isNotBlank(),
+                    onClick = { vm.updateNode(selected.id, name.trim(), values.toMap()) },
+                ) { Text(stringResource(R.string.ed_apply)) }
+            }
+        }
+
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+        // Debugger: run this workflow once right now and see the final status and variables, OpenBullet-style.
+        Text(stringResource(R.string.ed_debugger), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            androidx.compose.material3.Button(onClick = vm::runDebug, enabled = !ui.debugRunning) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.rn_start), modifier = Modifier.padding(start = 4.dp))
+            }
+            if (ui.debugRunning) CircularProgressIndicator(Modifier.size(24.dp))
+        }
+        Card(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 120.dp),
+            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = FFColors.bg),
+            border = BorderStroke(1.dp, FFColors.border),
+        ) {
+            Column(Modifier.padding(10.dp)) {
+                if (ui.debugLines.isEmpty()) {
+                    Text(stringResource(R.string.ed_debug_empty), color = FFColors.textMuted, fontFamily = FontFamily.Monospace)
+                } else {
+                    ui.debugLines.forEach {
+                        Text(
+                            it, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall,
+                            color = if (it.startsWith("BOT STATUS")) FFColors.cyan else FFColors.textPrimary,
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+    }
 }
 
 @Composable

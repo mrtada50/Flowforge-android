@@ -208,4 +208,14 @@
     <string name="an_status">Result status</string>
     <string name="an_history">Execution history</string>
     <string name="an_none">No data yet.</string>
+    <string name="ed_mode_stack">Stack</string>
+    <string name="ed_mode_canvas">Canvas</string>
+    <string name="ed_move_up">Move up</string>
+    <string name="ed_move_down">Move down</string>
+    <string name="ed_stack_title">CURRENT STACK</string>
+    <string name="ed_unlinked_title">Other blocks (branches/loops — wire in Canvas)</string>
+    <string name="ed_block_info">Block Info</string>
+    <string name="ed_apply">Apply</string>
+    <string name="ed_debugger">Debugger</string>
+    <string name="ed_debug_empty">Tap Start to run this workflow once and see the status and variables here.</string>
 </resources>
