@@ -16,7 +16,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 class DatasetToolsTest {
-    private fun tmp(text: String): File = File.createTempFile("ff", ".dat").apply { writeText(text); deleteOnExit() }
+    private fun tmp(text: String): File = File.createTempFile("ffdata", ".dat").apply { writeText(text); deleteOnExit() }
 
     private fun count(text: String): Long {
         val out = ByteArrayOutputStream()
