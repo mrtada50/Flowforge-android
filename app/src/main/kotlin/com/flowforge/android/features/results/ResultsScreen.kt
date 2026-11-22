@@ -300,7 +300,7 @@ private fun Analytics(vm: ResultsViewModel) {
 @Composable
 private fun StatusDot(color: androidx.compose.ui.graphics.Color) {
     Box(
-        Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(color),
+        Modifier.size(8.dp).clip(CircleShape).background(color),
     )
 }
 
