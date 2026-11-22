@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -56,6 +58,7 @@ import com.flowforge.android.data.database.LabelCount
 import com.flowforge.android.data.database.SessionRow
 import com.flowforge.android.data.repositories.ExecutionRepository
 import com.flowforge.android.data.storage.ResultsCsv
+import com.flowforge.android.ui.theme.StatusColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -189,8 +192,12 @@ private fun ResultsList(vm: ResultsViewModel, onExport: () -> Unit) {
                 items(list, key = { it.id }) { r ->
                     Card(Modifier.fillMaxWidth().clickable { detail = r }) {
                         Column(Modifier.padding(12.dp)) {
-                            Row {
-                                Text(r.status, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                StatusDot(StatusColors.forStatus(r.status))
+                                Text(
+                                    r.status, Modifier.weight(1f).padding(start = 6.dp),
+                                    style = MaterialTheme.typography.titleSmall, color = StatusColors.forStatus(r.status),
+                                )
                                 Text(fmt.format(Date(r.timestamp)), style = MaterialTheme.typography.labelSmall)
                             }
                             Text(
@@ -269,7 +276,7 @@ private fun Analytics(vm: ResultsViewModel) {
 
         Text(stringResource(R.string.an_status), style = MaterialTheme.typography.titleMedium)
         val maxStatus = (statusCounts.maxOfOrNull { it.cnt } ?: 1).coerceAtLeast(1)
-        statusCounts.forEach { Bar(it.label, it.cnt, it.cnt.toFloat() / maxStatus, MaterialTheme.colorScheme.primary) }
+        statusCounts.forEach { Bar(it.label, it.cnt, it.cnt.toFloat() / maxStatus, StatusColors.forStatus(it.label)) }
 
         Text(stringResource(R.string.an_history), style = MaterialTheme.typography.titleMedium)
         if (sessions.isEmpty()) Text(stringResource(R.string.an_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -291,11 +298,13 @@ private fun Analytics(vm: ResultsViewModel) {
 }
 
 @Composable
-private fun httpColor(label: String) = when {
-    label.startsWith("2") -> MaterialTheme.colorScheme.secondary
-    label.startsWith("3") -> MaterialTheme.colorScheme.primary
-    else -> MaterialTheme.colorScheme.error
+private fun StatusDot(color: androidx.compose.ui.graphics.Color) {
+    Box(
+        Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(color),
+    )
 }
+
+private fun httpColor(label: String) = StatusColors.forHttp(label.toIntOrNull() ?: 0)
 
 @Composable
 private fun Metric(label: String, value: String, modifier: Modifier) {

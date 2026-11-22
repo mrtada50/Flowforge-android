@@ -52,6 +52,7 @@ import com.flowforge.android.app.RunState
 import com.flowforge.android.data.database.DatasetEntity
 import com.flowforge.android.data.database.WorkflowEntity
 import com.flowforge.android.execution.BatchConfig
+import com.flowforge.android.ui.theme.FFColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -248,19 +249,24 @@ fun RunnerScreen() {
             val rt = Runtime.getRuntime()
             val memMb = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Stat(stringResource(R.string.rn_s_total), "${run.processed}/${run.total}", Modifier.weight(1f))
-                Stat(stringResource(R.string.rn_s_ok), "${run.success}", Modifier.weight(1f))
-                Stat(stringResource(R.string.rn_s_fail), "${run.failed}", Modifier.weight(1f))
+                Stat(stringResource(R.string.rn_s_total), "${run.processed}/${run.total}", Modifier.weight(1f), FFColors.blue)
+                Stat(stringResource(R.string.rn_s_ok), "${run.success}", Modifier.weight(1f), FFColors.success)
+                Stat(stringResource(R.string.rn_s_fail), "${run.failed}", Modifier.weight(1f), FFColors.fail)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Stat(stringResource(R.string.rn_s_cpm), "${run.cpm}", Modifier.weight(1f))
-                Stat(stringResource(R.string.rn_s_avg), "${run.avgHttpMs} ms", Modifier.weight(1f))
-                Stat(stringResource(R.string.rn_s_time), mmss(run.elapsedMs), Modifier.weight(1f))
+                Stat(stringResource(R.string.rn_s_cpm), "${run.cpm}", Modifier.weight(1f), FFColors.cyan)
+                Stat(stringResource(R.string.rn_s_avg), "${run.avgHttpMs} ms", Modifier.weight(1f), FFColors.warn)
+                Stat(stringResource(R.string.rn_s_time), mmss(run.elapsedMs), Modifier.weight(1f), FFColors.textMuted)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Stat(stringResource(R.string.rn_s_workers), "${run.activeWorkers}", Modifier.weight(1f))
-                Stat(stringResource(R.string.rn_s_mem), "$memMb MB", Modifier.weight(1f))
-                Stat(stringResource(R.string.rn_s_state), if (run.paused) stringResource(R.string.rn_paused) else if (run.active) stringResource(R.string.rn_running) else "-", Modifier.weight(1f))
+                Stat(stringResource(R.string.rn_s_workers), "${run.activeWorkers}", Modifier.weight(1f), FFColors.blue)
+                Stat(stringResource(R.string.rn_s_mem), "$memMb MB", Modifier.weight(1f), FFColors.textMuted)
+                Stat(
+                    stringResource(R.string.rn_s_state),
+                    if (run.paused) stringResource(R.string.rn_paused) else if (run.active) stringResource(R.string.rn_running) else "-",
+                    Modifier.weight(1f),
+                    if (run.paused) FFColors.warn else FFColors.success,
+                )
             }
 
             if (run.nodes.isNotEmpty()) {
@@ -286,18 +292,32 @@ fun RunnerScreen() {
             }
             if (run.logs.isNotEmpty()) {
                 Text(stringResource(R.string.rn_logs), style = MaterialTheme.typography.titleMedium)
-                run.logs.takeLast(40).forEach { Text(it, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) }
+                Card(
+                    Modifier.fillMaxWidth(),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = FFColors.bg),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, FFColors.border),
+                ) {
+                    Column(Modifier.padding(10.dp)) {
+                        run.logs.takeLast(40).forEach {
+                            Text(it, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, color = FFColors.cyan)
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun Stat(label: String, value: String, modifier: Modifier) {
-    Card(modifier) {
+private fun Stat(label: String, value: String, modifier: Modifier, accent: androidx.compose.ui.graphics.Color) {
+    Card(
+        modifier,
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = FFColors.surfaceRaised),
+        border = androidx.compose.foundation.BorderStroke(1.dp, FFColors.border),
+    ) {
         Column(Modifier.padding(10.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.titleMedium)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = FFColors.textMuted)
+            Text(value, style = MaterialTheme.typography.titleMedium, color = accent, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
         }
     }
 }

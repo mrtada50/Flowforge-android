@@ -75,6 +75,7 @@ import com.flowforge.android.workflow.model.NodeSpecs
 import com.flowforge.android.workflow.model.NodeType
 import com.flowforge.android.workflow.validation.Severity
 import com.flowforge.android.workflow.validation.ValidationIssue
+import com.flowforge.android.ui.theme.FFColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -295,10 +296,14 @@ private fun NodeView(
     val rows = maxOf(spec.inputs.size, spec.outputs.size, 1)
     val scheme = MaterialTheme.colorScheme
     val headerColor = when (node.type) {
-        NodeType.START, NodeType.END, NodeType.STOP -> scheme.secondary
-        NodeType.HTTP_REQUEST -> scheme.primary
-        else -> scheme.onSurfaceVariant
-    }.copy(alpha = 0.28f)
+        NodeType.START, NodeType.END, NodeType.STOP -> FFColors.success
+        NodeType.HTTP_REQUEST -> FFColors.blue
+        NodeType.JSON_PARSER, NodeType.HTML_PARSER, NodeType.REGEX_PARSER, NodeType.HEADER_PARSER, NodeType.TEXT_EXTRACTOR -> FFColors.cyan
+        NodeType.CONDITION, NodeType.IF_ELSE, NodeType.LOOP, NodeType.DATA_VALIDATION -> FFColors.retry
+        NodeType.ERROR_BRANCH -> FFColors.fail
+        NodeType.SUCCESS_BRANCH -> FFColors.success
+        else -> FFColors.textMuted
+    }.copy(alpha = 0.30f)
     val shape = RoundedCornerShape(10.dp)
 
     Box(
@@ -306,7 +311,7 @@ private fun NodeView(
             .absoluteOffset(node.x.dp, node.y.dp)
             .size(NODE_W.dp, nodeHeight(node.type).dp)
             .clip(shape)
-            .background(scheme.surface)
+            .background(FFColors.surfaceRaised)
             .border(if (selected) 2.dp else 1.dp, if (selected) scheme.primary else scheme.outline, shape)
             .pointerInput(node.id) {
                 detectDragGestures(
