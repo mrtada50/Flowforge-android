@@ -120,7 +120,8 @@ class HttpEngineTest {
     }
 
     @Test fun connectionFailureIsANetworkError() {
-        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+        // OkHttp retries a failed connection once or twice, so queue several failures.
+        repeat(4) { server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START)) }
         assertEquals(Kind.NETWORK, kindOf { engine().execute(HttpRequestSpec(url = url())) })
     }
 

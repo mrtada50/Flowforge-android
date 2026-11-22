@@ -80,6 +80,18 @@ class BatchRunnerTest {
         assertEquals(1, results.count { it.status == RunStatus.FAILED })
     }
 
+    @Test fun handledErrorsStillCountAsFailedItems() = runBlocking {
+        val w = wf(
+            listOf(n("s", NodeType.START), n("h", NodeType.HTTP_REQUEST, "url" to "https://a.test/\${row}"), n("e", NodeType.END)),
+            listOf(c("s", "out", "h"), c("h", "success", "e"), c("h", "error", "e")),
+        )
+        val results = CopyOnWriteArrayList<ItemResult>()
+        runner(Probe()).run(w, ListRowSource(listOf("ok", "bad")), BatchConfig(concurrency = 1, maxPerSecond = 20)) { results.add(it) }
+        assertEquals(2, results.size)
+        assertTrue(results.all { it.status == RunStatus.COMPLETED })
+        assertEquals(1, results.count { it.nodeFailed })
+    }
+
     @Test fun cancellationStopsAllWorkers() = runBlocking {
         val results = CopyOnWriteArrayList<ItemResult>()
         val job = launch { runner(Probe()).run(flow, rows(1000), BatchConfig(concurrency = 2, maxPerSecond = 20, maxItems = 1000)) { results.add(it) } }

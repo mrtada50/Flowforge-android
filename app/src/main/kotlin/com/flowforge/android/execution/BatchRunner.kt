@@ -93,6 +93,8 @@ data class ItemResult(
     val httpStatus: Int?,
     val httpMs: Long,
     val threw: Boolean,
+    /** True when any node failed, even if an error branch let the run reach End. */
+    val nodeFailed: Boolean = false,
 )
 
 /** Runs one workflow per dataset row with bounded concurrency and a bounded start rate. */
@@ -151,6 +153,7 @@ class BatchRunner(private val engine: WorkflowEngine) {
             httpStatus = httpNodes.lastOrNull()?.httpStatus,
             httpMs = httpNodes.sumOf { it.durationMs },
             threw = false,
+            nodeFailed = result.nodeStates.values.any { it.status == NodeStatus.FAILED },
         )
     }
 }

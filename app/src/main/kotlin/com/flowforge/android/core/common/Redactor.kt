@@ -4,7 +4,7 @@ package com.flowforge.android.core.common
 object Redactor {
     private val sensitiveHeaders = setOf("authorization", "proxy-authorization", "cookie", "set-cookie", "x-api-key")
     private val lineRule = Regex("""(?i)\b(authorization|proxy-authorization|cookie|set-cookie)\b(\s*[:=]\s*)[^\r\n]*""")
-    private val pairRule = Regex("""(?i)\b(password|passwd|pwd|token|secret|api[_-]?key|access[_-]?token)\b(["']?\s*[=:]\s*["']?)([^\s&;,"']+)""")
+    private val pairRule = Regex("""(?i)\b(password|passwd|pwd|token|secret|api[_-]?key|access[_-]?token)\b(["']?\s*[=:]\s*["']?)([^\s&;,"'}\])]+)""")
 
     fun redact(text: String): String {
         val a = lineRule.replace(text) { it.groupValues[1] + it.groupValues[2] + "***" }

@@ -5,6 +5,7 @@ import com.flowforge.android.domain.models.HttpRequestSpec
 import com.flowforge.android.domain.models.HttpResult
 import com.flowforge.android.execution.DefaultNodeHandler
 import com.flowforge.android.execution.ExecutionContext
+import com.flowforge.android.execution.NodeStatus
 import com.flowforge.android.execution.RunStatus
 import com.flowforge.android.execution.WorkflowEngine
 import com.flowforge.android.workflow.model.WorkflowTemplate
@@ -42,7 +43,9 @@ class WorkflowTemplatesTest {
     @Test fun datasetItemNeedsARow() = runBlocking {
         val w = WorkflowTemplates.build(WorkflowTemplate.DATASET_ITEM, "x")
         val engine = WorkflowEngine(DefaultNodeHandler(http("ok")))
-        assertEquals(RunStatus.FAILED, engine.execute(w, ExecutionContext()).status)
+        // The template routes request errors to a logger, so the run reaches End, but the node is FAILED.
+        val withoutRow = engine.execute(w, ExecutionContext())
+        assertTrue(withoutRow.nodeStates.values.any { it.status == NodeStatus.FAILED })
         assertEquals(RunStatus.COMPLETED, engine.execute(w, ExecutionContext(mapOf("row" to "abc"))).status)
     }
 }

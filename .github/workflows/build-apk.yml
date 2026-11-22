@@ -37,6 +37,14 @@ jobs:
           code=$?
           if [ $code -ne 0 ]; then
             echo "=========== BUILD ERRORS (copy from here) ==========="
+            python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          for f in sorted(glob.glob('app/build/test-results/testDebugUnitTest/*.xml')):
+              for tc in ET.parse(f).getroot().iter('testcase'):
+                  for fl in list(tc.findall('failure')) + list(tc.findall('error')):
+                      print('FAILED TEST:', tc.get('classname').split('.')[-1] + '.' + tc.get('name'))
+                      print('    ', (fl.get('message') or '')[:250].replace('\n', ' '))
+          PY
             grep -E "^e: |error:|What went wrong|FAILED|Test.*FAILED" -A4 build.log | head -70
             echo "====================== END =========================="
             { echo '### Build errors'; echo '```'; grep -E "^e: |error:|What went wrong|FAILED" -A4 build.log | head -70; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

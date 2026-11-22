@@ -173,7 +173,8 @@ class RunManager(
                                 s.copy(nodes = s.nodes.map { r -> if (r.id == e.nodeId) r.copy(state = e.state) else r })
                             }
                         }
-                        val ok = result.status == RunStatus.COMPLETED || result.status == RunStatus.STOPPED
+                        val ok = (result.status == RunStatus.COMPLETED || result.status == RunStatus.STOPPED) &&
+                            result.nodeStates.values.none { it.status == NodeStatus.FAILED }
                         _state.update { it.copy(processed = 1, success = if (ok) 1 else 0, failed = if (ok) 0 else 1, error = result.error) }
                         val now = System.currentTimeMillis()
                         for ((nodeId, st) in result.nodeStates) {
@@ -198,7 +199,7 @@ class RunManager(
                                 wf, source, cfg, runControl,
                                 onActiveWorkers = { n -> _state.update { it.copy(activeWorkers = n) } },
                             ) { r: ItemResult ->
-                                val ok = r.status == RunStatus.COMPLETED || r.status == RunStatus.STOPPED
+                                val ok = (r.status == RunStatus.COMPLETED || r.status == RunStatus.STOPPED) && !r.nodeFailed
                                 if (r.httpStatus != null) {
                                     httpMsSum.addAndGet(r.httpMs)
                                     httpCount.incrementAndGet()
