@@ -31,13 +31,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -533,16 +528,12 @@ private fun StackView(
                     }
                 }
             }
-            IconButton(onClick = vm::duplicateSelected) { Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.ed_duplicate)) }
+            TextButton(onClick = vm::duplicateSelected) { Text("⧉", style = MaterialTheme.typography.titleMedium) }
             IconButton(onClick = vm::deleteSelected) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.ed_delete)) }
-            IconButton(onClick = { selected?.let { vm.moveInStack(it.id, up = true) } }) {
-                Icon(Icons.Default.ArrowUpward, contentDescription = stringResource(R.string.ed_move_up))
-            }
-            IconButton(onClick = { selected?.let { vm.moveInStack(it.id, up = false) } }) {
-                Icon(Icons.Default.ArrowDownward, contentDescription = stringResource(R.string.ed_move_down))
-            }
-            IconButton(onClick = vm::flush) { Icon(Icons.Default.Save, contentDescription = stringResource(R.string.ed_save)) }
-            IconButton(onClick = onExport) { Icon(Icons.Default.FileDownload, contentDescription = stringResource(R.string.ed_export)) }
+            TextButton(onClick = { selected?.let { vm.moveInStack(it.id, up = true) } }) { Text("↑", style = MaterialTheme.typography.titleMedium) }
+            TextButton(onClick = { selected?.let { vm.moveInStack(it.id, up = false) } }) { Text("↓", style = MaterialTheme.typography.titleMedium) }
+            TextButton(onClick = vm::flush) { Text(stringResource(R.string.ed_save)) }
+            TextButton(onClick = onExport) { Text(stringResource(R.string.ed_export)) }
             TextButton(onClick = onShowIssues) { Text(stringResource(R.string.ed_validate)) }
         }
 
